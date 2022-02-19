@@ -7,18 +7,21 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using SignalRChartServer.Models;
+using SignalRChartServer.Subscription;
+using SignalRChartServer.Subscription.Middleware;
 
 namespace SignalRChartServer
 {
     public class Startup
     {
-        // This method gets called by the runtime. Use this method to add services to the container.
-        // For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
         public void ConfigureServices(IServiceCollection services)
         {
+            //Service Broker
+            services.AddSingleton<DatabaseSubscription<Satislar>>();//Uygulama bazlý tekil nesne oluþturmamýzý saðlar.Uygulama açýk kalana kadar
+            services.AddSingleton<DatabaseSubscription<Personeller>>();//Uygulama bazlý  tekil nesne oluþturmamýzý saðlar.Uygulama açýk kalana kadar
         }
 
-        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             if (env.IsDevelopment())
@@ -26,14 +29,15 @@ namespace SignalRChartServer
                 app.UseDeveloperExceptionPage();
             }
 
+            //Middleware 'i çaðýr
+            app.UseDatabaseSubscription<DatabaseSubscription<Satislar>>("Satislar");
+            app.UseDatabaseSubscription<DatabaseSubscription<Personeller>>("Personeller");
+
             app.UseRouting();
 
             app.UseEndpoints(endpoints =>
             {
-                endpoints.MapGet("/", async context =>
-                {
-                    await context.Response.WriteAsync("Hello World!");
-                });
+
             });
         }
     }
