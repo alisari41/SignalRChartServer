@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Configuration;
+using SignalRChartServer.Hubs;
 using TableDependency.SqlClient;
 
 namespace SignalRChartServer.Subscription
@@ -15,18 +17,21 @@ namespace SignalRChartServer.Subscription
     {
         private IConfiguration _configuration;//appsettings.json dosyasında sql yolunu alıcam
         private SqlTableDependency<T> _tableDependency;
+        private IHubContext<SatisHub> _hubContext;
 
-        public DatabaseSubscription(IConfiguration configuration)
+        public DatabaseSubscription(IConfiguration configuration, IHubContext<SatisHub> hubContext)
         {
             _configuration = configuration;
+            _hubContext = hubContext;
         }
 
         public void Configure(string tableName)
         {
             _tableDependency = new SqlTableDependency<T>(_configuration.GetConnectionString("SQL"), tableName);
-            _tableDependency.OnChanged += (o, e) =>//veritabanında değişiklik olduğunda çalışır
-            {
 
+            _tableDependency.OnChanged += async (o, e) =>//veritabanında değişiklik olduğunda çalışır
+            {
+                await _hubContext.Clients.All.SendAsync("receiveMessage", "Merhaba Babalar.");
             };
             _tableDependency.OnError += (o, e) =>
             {

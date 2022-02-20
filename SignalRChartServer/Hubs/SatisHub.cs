@@ -8,6 +8,9 @@ namespace SignalRChartServer.Hubs
 {
     public class SatisHub : Hub
     {
-
+        public async Task SendMassageAsync()
+        {
+            await Clients.All.SendAsync("receiveMessage", "Merhaba Babalar.");
+        }
     }
 }

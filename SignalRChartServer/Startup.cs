@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using SignalRChartServer.Hubs;
 using SignalRChartServer.Models;
 using SignalRChartServer.Subscription;
 using SignalRChartServer.Subscription.Middleware;
@@ -17,6 +18,14 @@ namespace SignalRChartServer
     {
         public void ConfigureServices(IServiceCollection services)
         {
+            //Tarayýcýda çalýþmasý için Cors kütüphanesini ekle
+            services.AddCors(options => options.AddDefaultPolicy(policy =>
+                policy.AllowCredentials()
+                    .AllowAnyHeader()
+                    .AllowAnyMethod()
+                    .SetIsOriginAllowed(x => true)));
+            //SignalR kütüphanesini dahil ediyoruz
+            services.AddSignalR();
             //Service Broker
             services.AddSingleton<DatabaseSubscription<Satislar>>();//Uygulama bazlý tekil nesne oluþturmamýzý saðlar.Uygulama açýk kalana kadar
             services.AddSingleton<DatabaseSubscription<Personeller>>();//Uygulama bazlý  tekil nesne oluþturmamýzý saðlar.Uygulama açýk kalana kadar
@@ -29,15 +38,19 @@ namespace SignalRChartServer
                 app.UseDeveloperExceptionPage();
             }
 
+            //Cros
+            app.UseCors();
             //Middleware 'i çaðýr
             app.UseDatabaseSubscription<DatabaseSubscription<Satislar>>("Satislar");
             app.UseDatabaseSubscription<DatabaseSubscription<Personeller>>("Personeller");
+
 
             app.UseRouting();
 
             app.UseEndpoints(endpoints =>
             {
-
+                //SignalR entpiont oluþturuldu
+                endpoints.MapHub<SatisHub>("/satishub");
             });
         }
     }
