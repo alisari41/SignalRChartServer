@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Configuration;
 using SignalRChartServer.Hubs;
+using SignalRChartServer.Models;
 using TableDependency.SqlClient;
 
 namespace SignalRChartServer.Subscription
@@ -31,7 +32,32 @@ namespace SignalRChartServer.Subscription
 
             _tableDependency.OnChanged += async (o, e) =>//veritabanında değişiklik olduğunda çalışır
             {
-                await _hubContext.Clients.All.SendAsync("receiveMessage", "Merhaba Babalar.");
+                //SQL  deki veri tabanının verileri çekiliyor
+                SatisDbContext contex = new SatisDbContext();
+                var data = (from personel in contex.Personellers
+                            join satis in contex.Satislars
+                                on personel.Id equals satis.PersonelId
+                            select new { personel, satis }).ToList();
+
+
+                List<object> datas = new List<object>();
+
+                var personelIsimleri = data.Select(d => d.personel.Adi).Distinct().ToList();//Tekilleştiriyorum
+
+
+                personelIsimleri.ForEach(p =>
+                {
+                    datas.Add(new
+                    {
+                        name = p,
+                        data = data.Where(s => s.personel.Adi == p).Select(s => s.satis.Fiyat).ToList() //Gelicek olan satışlar
+                    });
+                });
+
+
+
+                await _hubContext.Clients.All.SendAsync("receiveMessage", datas);
+
             };
             _tableDependency.OnError += (o, e) =>
             {
